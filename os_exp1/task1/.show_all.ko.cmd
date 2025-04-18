@@ -1,0 +1,1 @@
+cmd_/home/qingyun/process/os_exp1/task1/show_all.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/qingyun/process/os_exp1/task1/show_all.ko /home/qingyun/process/os_exp1/task1/show_all.o /home/qingyun/process/os_exp1/task1/show_all.mod.o
