@@ -15,17 +15,20 @@ void* sender1()
 	char buffer[MAX_SIZE];
 	while(1)
 	{
+		sem_wait(&sem_sender1);
 		printf("sender1: input your message\n");
 		scanf("%s",buffer);
 		if(strcmp(buffer,"exit")==0)
 		{
 			break;
 		}
-		sem_wait(&sem_sender1);
-		mq_send(mq,buffer,strlen(buffer),1);
+		char send_buffer[MAX_SIZE];
+		snprintf(send_buffer,MAX_SIZE,"sender1:%s",buffer);
+		printf("sended message:%s",send_buffer);
+		mq_send(mq,send_buffer,strlen(send_buffer),1);
 		sem_post(&sem_receive);
 	}
-	mq_send(mq,"end1",strlen("end1"),1);
+	mq_send(mq,"sender1:end1",strlen("end1"),1);
 	sem_post(&sem_receive);
 }
 
@@ -34,17 +37,19 @@ void* sender2()
 	char buffer[MAX_SIZE];
 	while(1)
 	{
+		sem_wait(&sem_sender2);
 		printf("sender2: input your message\n");
 		scanf("%s",buffer);
 		if(strcmp(buffer,"exit")==0)
 		{
 			break;
 		}
-		sem_wait(&sem_sender2);
-		mq_send(mq,buffer,strlen(buffer),1);
+		char send_buffer[MAX_SIZE];
+		snprintf(send_buffer,MAX_SIZE,"sender1:%s\n",buffer);
+		mq_send(mq,send_buffer,strlen(send_buffer),1);
 		sem_post(&sem_receive);
 	}
-	mq_send(mq,"end2",strlen("end2"),1);
+	mq_send(mq,"sender2:end2",strlen("end2"),1);
 	sem_post(&sem_receive);
 }
 
@@ -56,16 +61,28 @@ void* receive()
 		sem_wait(&sem_receive);
 		mq_receive(mq,buffer,MAX_SIZE,NULL);
 		printf("receive receiced message:%s\n",buffer);
-		if(strcmp(buffer,"end1")==0)
+		if(strncmp(buffer,"sender1:",8)==0)
 		{
-			mq_send(mq,"over1",strlen("over1"),1);
-			sem_post(&sem_sender1);
+			if(strcmp(buffer+8,"end1")==0)
+			{
+				mq_send(mq,"over1",strlen("over1"),1);
+			}
+			else
+			{
+				sem_post(&sem_sender1);
+			}
 		}
-		else if(strcmp(buffer,"end2")==0)
+		else if(strncmp(buffer,"sender2:",8)==0)
 		{
-			mq_send(mq,"over2",strlen("over2"),1);
-			sem_post(&sem_sender2);
-			break;
+			if(strcmp(buffer+8,"end2")==0)
+			{
+				mq_send(mq,"over2",strlen("over2"),1);
+				break;
+			}
+			else
+			{
+				sem_post(&sem_sender2);
+			}
 		}
 	}
 	mq_close(mq);
@@ -75,8 +92,8 @@ void* receive()
 int main()
 {
 	pthread_t sender1_thread,sender2_thread,receive_thread;
-	sem_init(&sem_sender1,0,0);
-	sem_init(&sem_sender2,0,0);
+	sem_init(&sem_sender1,0,1);
+	sem_init(&sem_sender2,0,1);
 	sem_init(&sem_receive,0,0);
 	struct mq_attr attr;
 	attr.mq_flags = 0;
