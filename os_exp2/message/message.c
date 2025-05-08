@@ -16,7 +16,7 @@ void* sender1()
 	while(1)
 	{
 		sem_wait(&sem_sender1);
-		printf("sender1: input your message\n");
+		printf("sender1: input");
 		scanf("%s",buffer);
 		if(strcmp(buffer,"exit")==0)
 		{
